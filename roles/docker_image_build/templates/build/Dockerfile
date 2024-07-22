@@ -14,8 +14,8 @@ RUN ln -fs /usr/share/zoneinfo/{{ timezone }} /etc/localtime \
   && apt-get clean
 
 # Add tini as an init to fix signal forwarding when using a bash script as the entrypoint
-ENV TINI_VERSION {{ tini_version }}
-ADD https://github.com/krallin/tini/releases/download/${{ tini_version }}/tini /tini
+ENV TINI_VERSION "{{ tini_version }}"
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 
 {% if install_splunk %}
