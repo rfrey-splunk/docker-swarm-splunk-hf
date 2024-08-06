@@ -55,7 +55,8 @@ healthcheck_command: |-
   python3 {{ splunk_home }}/metrics_healthcheck.py
   {% endif %}
 
-entrypoint: "{{ splunk_home }}/entrypoint.sh"
+##entrypoint: "{{ splunk_home }}/entrypoint.sh"
+entrypoint: "This is testing for spaces"
 # by default run entrypoint as splunk user
 entrypoint_user: "{{ splunk_user_id }}:{{ splunk_group_id }}"
 
