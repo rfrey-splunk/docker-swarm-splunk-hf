@@ -41,14 +41,14 @@ case "${1}" in
     "migrate_kvstore")
         migrate_kvstore
     ;;
-    "start_splunk"|"")
+    "start"|"")
         migrate_kvstore
-        start
+        start_splunk
     ;;
-    "stop_splunk")
-        stop
+    "stop")
+        stop_splunk
     ;;
-    "restart_splunk")
-        restart
+    "restart")
+        restart_splunk
     ;;
 esac
