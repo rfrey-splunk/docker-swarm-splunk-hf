@@ -19,29 +19,37 @@ migrate_kvstore() {
 
 # starts Splunk using the CLI
 start_splunk() {
+    # replace the process running this script with the process running Splunk
+    # note: this "fixes" signal forwarding so that the trap for stop_splunk
+    #       should not be needed, however it has been included here in case it
+    #       occurs before the exec is complete
     exec {{ splunk_home }}/bin/splunk start --nodaemon --accept-license --answer-yes --no-prompt $@
 }
 
 # stops Splunk using the CLI
 stop_splunk() {
-    exec {{ splunk_home }}/bin/splunk stop $@ 2>/dev/null || true
+    {{ splunk_home }}/bin/splunk stop $@ 2>/dev/null || true
 }
 
-# calls stop when SIGINT and SIGTERM are received for graceful shutdowns in Docker Swarm
+# calls stop_splunk function when SIGINT and SIGTERM are received
+# to allow for graceful shutdowns in Docker Swarm
 trap stop_splunk SIGINT SIGTERM
 
 # restarts Splunk using the CLI
 restart_splunk() {
-    exec {{ splunk_home }}/bin/splunk restart $@ 2>/dev/null || true
+    stop_splunk
+    start_splunk
 }
 
-# BEGIN EXECUTION HERE
+########################
+# BEGIN EXECUTION HERE #
+########################
 
 case "${1}" in
     "migrate_kvstore")
         migrate_kvstore
     ;;
-    "start"|"")
+    "start"|"") # default
         migrate_kvstore
         start_splunk
     ;;
