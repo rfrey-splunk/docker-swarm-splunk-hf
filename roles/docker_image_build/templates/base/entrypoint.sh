@@ -28,7 +28,7 @@ stop_splunk() {
 }
 
 # calls stop when SIGINT and SIGTERM are received for graceful shutdowns in Docker Swarm
-trap stop SIGINT SIGTERM
+trap stop_splunk SIGINT SIGTERM
 
 # restarts Splunk using the CLI
 restart_splunk() {
