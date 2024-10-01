@@ -4,7 +4,7 @@ set -e
 
 # performs mongod upgrades and engine migrations as configured
 migrate_kvstore() {
-    {{ splunk_home }}/bin/splunk migrate migrate-kvstore-36-40
+    {{ splunk_home }}/bin/splunk migrate migrate-kvstore-36-40 || true
 
     {% if migrate_kvstore is defined %}
     {{ splunk_home }}/bin/splunk start --accept-license --answer-yes --no-prompt $@
