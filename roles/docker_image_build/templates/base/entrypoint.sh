@@ -23,6 +23,7 @@ start_splunk() {
     # note: this "fixes" signal forwarding so that the trap for stop_splunk
     #       should not be needed, however it has been included here in case it
     #       occurs before the exec is complete
+    migrate_kvstore
     exec {{ splunk_home }}/bin/splunk start --nodaemon --accept-license --answer-yes --no-prompt $@
 }
 
