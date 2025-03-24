@@ -56,7 +56,7 @@ healthcheck_command: |-
   {% endif %}
 
 entrypoint: "{{ splunk_home }}/entrypoint.sh"
-tini_entrypoint: "{{ [\"/tini\", \"-g\", \"--\", \"/bin/bash\", \"-c\"] + entrypoint | split }}"
+tini_entrypoint: "{{ [\"/tini\", \"--\", \"/bin/bash\", \"-c\"] + entrypoint | split }}"
 entrypoint_list: "{{ tini_entrypoint | to_json }}"
 
 # by default run entrypoint as splunk user

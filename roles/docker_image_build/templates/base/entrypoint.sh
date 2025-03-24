@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+# shellcheck disable=all
 
-set -e
+# set -e
 
 # performs mongod upgrades and engine migrations as configured
 migrate_kvstore() {
-    {{ splunk_home }}/bin/splunk migrate migrate-kvstore-36-40 || true
+    {{ splunk_home }}/bin/splunk migrate migrate-kvstore-36-40
 
     {% if migrate_kvstore is defined %}
     {{ splunk_home }}/bin/splunk start --accept-license --answer-yes --no-prompt $@
@@ -19,22 +20,45 @@ migrate_kvstore() {
 
 # starts Splunk using the CLI
 start_splunk() {
-    # replace the process running this script with the process running Splunk
-    # note: this "fixes" signal forwarding so that the trap for stop_splunk
-    #       should not be needed, however it has been included here in case it
-    #       occurs before the exec is complete
+    printf "Performing kvstore migration before starting Splunk\n"
     migrate_kvstore
-    exec {{ splunk_home }}/bin/splunk start --nodaemon --accept-license --answer-yes --no-prompt $@
+
+    printf "Starting Splunk with arguments ${*}\n"
+    {{ splunk_home }}/bin/splunk start --nodaemon --accept-license --answer-yes --no-prompt $@ &
+    splunk_pid=$!
+    printf "Splunk is now running with pid ${splunk_pid}\n"
+    wait_for_splunk_to_stop
 }
 
 # stops Splunk using the CLI
 stop_splunk() {
-    {{ splunk_home }}/bin/splunk stop $@ 2>/dev/null || true
+    printf "Stopping Splunk running with pid ${splunk_pid} for graceful shutdown\n"
+    {{ splunk_home }}/bin/splunk stop
+    if [ -f {{ splunk_home }}/var/run/splunk/conf-mutator.pid ]; then
+        printf "Found conf-mutator.pid file containing pid %d after shutdown, removing...\n" "$(cat {{ splunk_home }}/var/run/splunk/conf-mutator.pid)"
+        rm -vf {{ splunk_home }}/var/run/splunk/conf-mutator.pid
+    fi
+}
+
+wait_for_splunk_to_stop() {
+    wait -n ${splunk_pid}
+    printf "Entrypoint has detected that Splunk is no longer running and is now exiting\n"
+}
+
+# log graceful shutdown and call stop_splunk
+graceful_shutdown() {
+    printf "Received SIGTERM interrupt, now stopping Splunk running with PID ${splunk_pid} for graceful shutdown\n"
+    printf "Stopping Splunk running with pid ${splunk_pid} for graceful shutdown\n"
+    {{ splunk_home }}/bin/splunk stop
+    if [ -f {{ splunk_home }}/var/run/splunk/conf-mutator.pid ]; then
+        printf "Found conf-mutator.pid file containing pid %d after shutdown, removing...\n" "$(cat {{ splunk_home }}/var/run/splunk/conf-mutator.pid)"
+        rm -vf {{ splunk_home }}/var/run/splunk/conf-mutator.pid
+    fi
 }
 
 # calls stop_splunk function when SIGINT and SIGTERM are received
 # to allow for graceful shutdowns in Docker Swarm
-trap stop_splunk SIGINT SIGTERM
+trap graceful_shutdown SIGTERM
 
 # restarts Splunk using the CLI
 restart_splunk() {
